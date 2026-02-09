@@ -1,4 +1,4 @@
-import { Tokenizer } from "./tokenizer.js";
+import { Tokenizer, TOKEN_TYPES } from "./tokenizer.js";
 import { SpeechController } from "./speechController.js";
 import { KeyboardHandler } from "./keyboard.js";
 
@@ -17,11 +17,15 @@ class App {
       spell: () => this.speakCurrent("SPELL"),
       toggleCaps: () => this.toggleCaps(),
       togglePunct: () => this.togglePunctuation(),
+      toggleVisual: () => this.toggleVisualMode(),
       increaseRate: () => this.updateRate(0.1),
       decreaseRate: () => this.updateRate(-0.1),
       startSession: () => this.startSession(),
+      autoRead: () => this.toggleAutoRead(),
       isSessionActive: () => this.isSessionRunning,
     });
+
+    this.isVisualMode = false;
 
     // DOM Elements
     this.elements = {
@@ -40,6 +44,7 @@ class App {
       punctVal: document.querySelector("#punct-indicator .value"),
       capsToggle: document.getElementById("caps-toggle"),
       punctToggle: document.getElementById("punct-toggle"),
+      visualToggle: document.getElementById("visual-toggle"),
       toast: document.getElementById("toast"),
     };
 
@@ -58,6 +63,9 @@ class App {
       if (this.speech.punctuationNarration !== e.target.checked)
         this.togglePunctuation(true);
     });
+    this.elements.visualToggle.addEventListener("change", (e) => {
+      if (this.isVisualMode !== e.target.checked) this.toggleVisualMode(true);
+    });
   }
 
   startSession() {
@@ -67,8 +75,28 @@ class App {
       return;
     }
 
+    // Capture current toggle states before starting
+    const capsOn = this.elements.capsToggle.checked;
+    const punctOn = this.elements.punctToggle.checked;
+    const visualOn = this.elements.visualToggle.checked;
+
     this.tokens = Tokenizer.tokenize(text);
     if (this.tokens.length === 0) return;
+
+    // Apply states to controllers without resetting
+    this.speech.capsNarration = capsOn;
+    this.speech.punctuationNarration = punctOn;
+    this.isVisualMode = visualOn;
+
+    // Sync UI indicators
+    this.elements.capsVal.textContent = capsOn ? "ON" : "OFF";
+    this.elements.punctVal.textContent = punctOn ? "ON" : "OFF";
+    this.elements.capsVal.parentElement
+      .querySelector(".dot")
+      .classList.toggle("highlight", capsOn);
+    this.elements.punctVal.parentElement
+      .querySelector(".dot")
+      .classList.toggle("highlight", punctOn);
 
     this.currentIndex = 0;
     this.isSessionRunning = true;
@@ -80,7 +108,7 @@ class App {
     this.renderContext();
     this.updateUI();
     this.speakCurrent();
-    this.showToast("Session started! Use Arrow Keys to navigate.");
+    this.showToast("Session started! F to toggle Visual Mode.");
   }
 
   stopSession() {
@@ -104,7 +132,28 @@ class App {
   speakCurrent(mode = "NORMAL") {
     const token = this.tokens[this.currentIndex];
     if (token) {
-      this.speech.speak(token, mode);
+      this.speech.speak(token, mode, () => {
+        if (this.isAutoReading) {
+          setTimeout(() => {
+            if (this.currentIndex < this.tokens.length - 1) {
+              this.navigate(1);
+            } else {
+              this.toggleAutoRead();
+            }
+          }, 200); // Tiny pause between words for natural flow
+        }
+      });
+    }
+  }
+
+  toggleAutoRead() {
+    this.isAutoReading = !this.isAutoReading;
+    if (this.isAutoReading) {
+      this.showToast("Auto-Read: ON");
+      this.speakCurrent();
+    } else {
+      this.showToast("Auto-Read: OFF");
+      this.speech.cancel();
     }
   }
 
@@ -140,6 +189,16 @@ class App {
       this.showToast(`Punctuation Narration: ${isEnabled ? "ON" : "OFF"}`);
   }
 
+  toggleVisualMode(fromToggle = false) {
+    this.isVisualMode = !this.isVisualMode;
+    if (this.elements.visualToggle.checked !== this.isVisualMode) {
+      this.elements.visualToggle.checked = this.isVisualMode;
+    }
+    this.renderContext(); // Full re-render for mode switch
+    this.updateUI();
+    this.showToast(`Visual Mode: ${this.isVisualMode ? "ON" : "OFF"}`);
+  }
+
   updateRate(delta) {
     const newRate = this.speech.setRate(this.speech.rate + delta);
     this.elements.speedVal.textContent = `${newRate.toFixed(2)}x`;
@@ -155,35 +214,101 @@ class App {
     this.elements.prevToken.textContent = prev ? prev.raw : "";
     this.elements.nextToken.textContent = next ? next.raw : "";
 
+    // Highlight if phonetic
+    this.elements.currentToken.classList.toggle(
+      "is-phonetic",
+      current && current.isPhonetic,
+    );
+
     // Update progress
     this.elements.progress.textContent = `${this.currentIndex + 1} / ${this.tokens.length} tokens`;
 
-    // Update context highlighting
-    const contextTokens =
-      this.elements.contextView.querySelectorAll(".context-token");
-    contextTokens.forEach((el, idx) => {
-      if (idx === this.currentIndex) {
-        el.classList.add("highlight");
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else {
-        el.classList.remove("highlight");
-      }
-    });
+    if (this.isVisualMode) {
+      this.renderContext(); // Refresh line window
+    } else {
+      // Update context highlighting
+      const contextTokens =
+        this.elements.contextView.querySelectorAll(".context-token");
+      contextTokens.forEach((el, idx) => {
+        if (idx === this.currentIndex) {
+          el.classList.add("highlight");
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          el.classList.remove("highlight");
+        }
+      });
+    }
   }
 
   renderContext() {
     this.elements.contextView.innerHTML = "";
+
+    if (this.isVisualMode) {
+      this._renderVisualContext();
+    } else {
+      this.tokens.forEach((token, idx) => {
+        if (token.type === TOKEN_TYPES.NEWLINE) return;
+        const span = document.createElement("span");
+        span.className = "context-token";
+        if (token.isPhonetic) span.classList.add("is-phonetic");
+        span.textContent = token.raw;
+        span.dataset.index = idx;
+        span.onclick = () => {
+          this.currentIndex = idx;
+          this.updateUI();
+          this.speakCurrent();
+        };
+        this.elements.contextView.appendChild(span);
+      });
+    }
+  }
+
+  _renderVisualContext() {
+    // Group tokens into lines
+    const lines = [];
+    let currentLine = [];
+    let activeLineIndex = -1;
+
     this.tokens.forEach((token, idx) => {
-      const span = document.createElement("span");
-      span.className = "context-token";
-      span.textContent = token.raw;
-      span.dataset.index = idx;
-      span.onclick = () => {
-        this.currentIndex = idx;
-        this.updateUI();
-        this.speakCurrent();
-      };
-      this.elements.contextView.appendChild(span);
+      if (idx === this.currentIndex) activeLineIndex = lines.length;
+      if (token.type === TOKEN_TYPES.NEWLINE) {
+        lines.push(currentLine);
+        currentLine = [];
+      } else {
+        currentLine.push({ ...token, idx });
+      }
+    });
+    if (currentLine.length > 0) lines.push(currentLine);
+
+    lines.forEach((lineTokens, lineIdx) => {
+      // Only render current and next line
+      if (lineIdx !== activeLineIndex && lineIdx !== activeLineIndex + 1)
+        return;
+
+      const lineDiv = document.createElement("div");
+      lineDiv.className = "line-wrapper";
+
+      if (lineIdx === activeLineIndex) {
+        lineDiv.classList.add("current-line");
+      } else {
+        lineDiv.classList.add("next-line-hint");
+      }
+
+      lineTokens.forEach((t) => {
+        const span = document.createElement("span");
+        span.className = "context-token";
+        if (t.idx === this.currentIndex) span.classList.add("highlight");
+        if (t.isPhonetic) span.classList.add("is-phonetic");
+        span.textContent = t.raw + " ";
+        span.onclick = () => {
+          this.currentIndex = t.idx;
+          this.updateUI();
+          this.speakCurrent();
+        };
+        lineDiv.appendChild(span);
+      });
+
+      this.elements.contextView.appendChild(lineDiv);
     });
   }
 

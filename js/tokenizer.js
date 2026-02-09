@@ -7,6 +7,7 @@ export const TOKEN_TYPES = {
   WORD: "WORD",
   PUNCT: "PUNCT",
   SYMBOL: "SYMBOL",
+  NEWLINE: "NEWLINE",
 };
 
 export const CASING = {
@@ -24,7 +25,7 @@ const PUNCTUATION_MAP = {
   ";": "semi colon",
   ":": "colon",
   "-": "dash",
-  _: "underscore",
+  "_": "underscore",
   "(": "open bracket",
   ")": "close bracket",
   "[": "open square bracket",
@@ -48,6 +49,13 @@ const PUNCTUATION_MAP = {
   ">": "greater than",
   "|": "pipe",
   "~": "tilde",
+  "`": "backtick" 
+};
+
+const PHONETIC_MAP = {
+  to: "too",
+  am: "am ",
+  of: "off",
 };
 
 export class Tokenizer {
@@ -59,10 +67,8 @@ export class Tokenizer {
   static tokenize(text) {
     if (!text) return [];
 
-    // Regex to split into words and individual symbols/punctuation
-    // [A-Za-z0-9']+ matches words (including apostrophes)
-    // [^\w\s] matches any non-word, non-whitespace character (punctuation/symbols)
-    const regex = /([A-Za-z0-9']+|[^\w\s])/g;
+    // Regex to split into words, symbols, and newlines
+    const regex = /([A-Za-z0-9']+|\n|[^\w\s])/g;
     const matches = text.match(regex) || [];
 
     return matches.map((raw) => this.processToken(raw));
@@ -78,6 +84,20 @@ export class Tokenizer {
     let spokenNormal = raw;
     let spokenSpell = raw.split("").join(", ");
     let spokenNoCaps = raw;
+    let isPhonetic = false;
+
+    // Check for newline
+    if (raw === "\n") {
+      return {
+        raw,
+        type: TOKEN_TYPES.NEWLINE,
+        casing,
+        spokenNormal: "", // Silence for newlines
+        spokenSpell: "",
+        spokenNoCaps: "",
+        isPhonetic: false,
+      };
+    }
 
     // Determine if it's a word or punctuation
     if (/^[A-Za-z0-9']+$/.test(raw)) {
@@ -94,6 +114,19 @@ export class Tokenizer {
         casing = CASING.LOWER;
       }
 
+      // Apply Phonetic Map (case insensitive check for key)
+      const lowerRaw = raw.toLowerCase();
+      if (PHONETIC_MAP[lowerRaw]) {
+        spokenNormal = PHONETIC_MAP[lowerRaw];
+        isPhonetic = true;
+
+        // Maintain casing energy if capitalized
+        if (casing === CASING.CAPITALIZED || casing === CASING.ALL_CAPS) {
+          spokenNormal =
+            spokenNormal.charAt(0).toUpperCase() + spokenNormal.slice(1);
+        }
+      }
+
       spokenNoCaps = raw.toLowerCase();
     } else {
       type = PUNCTUATION_MAP[raw] ? TOKEN_TYPES.PUNCT : TOKEN_TYPES.SYMBOL;
@@ -108,6 +141,7 @@ export class Tokenizer {
       spokenNormal,
       spokenSpell,
       spokenNoCaps,
+      isPhonetic,
     };
   }
 }

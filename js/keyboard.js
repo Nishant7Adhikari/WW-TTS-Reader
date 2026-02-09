@@ -1,4 +1,4 @@
-/**
+  /**
  * Keyboard Handler for WW TTS Reader
  * Maps physical keys to application actions.
  */
@@ -22,6 +22,14 @@ export class KeyboardHandler {
         e.preventDefault();
         this.actions.togglePunct();
         return;
+      }
+
+      if (e.key === "f" || e.key === "F") {
+        if (document.activeElement.id !== "text-input") {
+          e.preventDefault();
+          this.actions.toggleVisual();
+          return;
+        }
       }
 
       // Ignore if user is typing in the textarea (unless they press the trigger to start)
@@ -50,7 +58,9 @@ export class KeyboardHandler {
       // Navigation
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        if (e.ctrlKey) {
+        if (e.ctrlKey && e.shiftKey) {
+          this.actions.autoRead();
+        } else if (e.ctrlKey) {
           this.actions.spell();
         } else {
           this.actions.next();

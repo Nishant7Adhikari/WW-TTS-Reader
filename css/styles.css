@@ -1,8 +1,8 @@
 :root {
   --primary: #6366f1;
   --primary-hover: #4f46e5;
-  --bg-main: #0f172a;
-  --bg-card: #1e293b;
+  --bg-main: #181818;
+  --bg-card: #101010;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --accent: #22d3ee;
@@ -249,6 +249,52 @@ kbd {
   color: var(--bg-main);
 }
 
+.shortcuts-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.shortcut-item span {
+  flex: 1;
+}
+
+.shortcut-item kbd {
+  margin-left: 4px;
+}
+
+/* Visual Mode Styles */
+.line-wrapper {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px 0;
+  min-height: 1.5rem;
+  transition: all 0.2s;
+}
+
+.line-wrapper.current-line {
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 3px solid var(--primary);
+  padding-left: 16px;
+  opacity: 1;
+}
+
+.line-wrapper.next-line-hint {
+  opacity: 0.05; /* Very faded next line */
+  filter: blur(0.5px);
+}
+
 /* Features Grid */
 .features-grid {
   display: grid;
@@ -370,6 +416,18 @@ kbd {
 .context-token.highlight {
   color: var(--primary);
   font-weight: 600;
+}
+
+.context-token.is-phonetic,
+.token.active.is-phonetic {
+  background: rgba(234, 179, 8, 0.4); /* Yellow-ish background */
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);
+  border-radius: 4px;
+}
+
+.token.active.is-phonetic {
+  background: #eab308; /* Solid yellow for the main display */
+  color: #000;
 }
 
 /* Status Bar */

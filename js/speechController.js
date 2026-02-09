@@ -38,8 +38,9 @@ export class SpeechController {
    * Speaks a token based on the current mode.
    * @param {Object} token - Token object from Tokenizer
    * @param {string} mode - 'NORMAL', 'SPELL', 'NOCAPS'
+   * @param {Function} onEnd - Callback when speech finished
    */
-  speak(token, mode = "NORMAL") {
+  speak(token, mode = "NORMAL", onEnd = null) {
     this.synth.cancel(); // Stop any current speech
 
     let textToSpeak = "";
@@ -72,6 +73,12 @@ export class SpeechController {
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = this.rate;
     if (this.voice) utterance.voice = this.voice;
+
+    if (onEnd) {
+      utterance.onend = onEnd;
+      // Handle potential utterance issues
+      utterance.onerror = onEnd;
+    }
 
     this.synth.speak(utterance);
   }

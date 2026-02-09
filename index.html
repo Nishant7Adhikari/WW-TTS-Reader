@@ -46,7 +46,14 @@
                 <input type="checkbox" id="punct-toggle" />
                 <span class="slider"></span>
               </label>
-              <span>Punctuation Narration <kbd>Ctrl</kbd>+<kbd>P</kbd></span>
+              <span>Punct (Ctrl+P)</span>
+            </div>
+            <div class="setting">
+              <label class="switch">
+                <input type="checkbox" id="visual-toggle" />
+                <span class="slider"></span>
+              </label>
+              <span>Visual Mode (F)</span>
             </div>
           </div>
 
@@ -63,36 +70,6 @@
         <div class="scroll-prompt">
           <span>Scroll for Documentation & Features</span>
           <span class="arrow">↓</span>
-        </div>
-      </section>
-
-      <!-- Documentation Section (Below Fold) -->
-      <section class="docs-section">
-        <div class="features-grid">
-          <div class="feature">
-            <span class="icon">⌨️</span>
-            <h3>Keyboard First</h3>
-            <p>Navigate word-by-word using arrow keys. No mouse needed.</p>
-          </div>
-          <div class="feature">
-            <span class="icon">🔊</span>
-            <h3>Punctuation Narration</h3>
-            <p>
-              Speaks commas, dots, and brackets clearly for accurate writing.
-            </p>
-          </div>
-          <div class="feature">
-            <span class="icon">🔠</span>
-            <h3>Case Control</h3>
-            <p>
-              Toggle narration of capital letters to avoid spelling mistakes.
-            </p>
-          </div>
-        </div>
-        <div class="docs-link-container">
-          <a href="docs/api_design.md" class="docs-link" target="_blank"
-            >View Technical Documentation</a
-          >
         </div>
       </section>
 
@@ -115,6 +92,50 @@
 
         <div class="context-view" id="context-view">
           <!-- Tokens will be rendered here for context -->
+        </div>
+      </section>
+
+      <!-- Documentation Section (Below Fold) -->
+      <section class="docs-section">
+        <div class="features-grid">
+          <div class="feature">
+            <span class="icon">⌨️</span>
+            <h3>Keyboard First</h3>
+            <p>Navigate word-by-word using arrow keys. No mouse needed.</p>
+          </div>
+          <div class="feature">
+            <span class="icon">🔊</span>
+            <h3>Punctuation</h3>
+            <p>
+              Speaks commas, dots, and brackets clearly for accurate writing.
+            </p>
+          </div>
+          <div class="feature shortcuts-card">
+            <span class="icon">📋</span>
+            <h3>Shortcuts Guide</h3>
+            <div class="shortcuts-accordion">
+              <div class="shortcut-item">
+                <span>Next/Prev</span><kbd>→</kbd>/<kbd>←</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span>Repeat</span><kbd>Enter</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span>Auto-Read</span><kbd>Ctrl+Sh+→</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span>Visual Mode</span><kbd>F</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span>Settings</span><kbd>Ct+Ent</kbd>/<kbd>Ct+P</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="docs-link-container">
+          <a href="docs/api_design.md" class="docs-link" target="_blank"
+            >View Technical Documentation</a
+          >
         </div>
       </section>
 
