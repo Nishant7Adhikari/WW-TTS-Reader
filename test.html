@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="data:," />
+
+  <title>Gemini TTS Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+    }
+    textarea, input, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+    }
+    audio {
+      margin-top: 20px;
+      width: 100%;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Gemini TTS (Free Tier) Test</h2>
+
+<label>API Keys (comma-separated)</label>
+<input id="keys" placeholder="AIza...,AIza..." />
+
+<label>Text to Speak</label>
+<textarea id="text" rows="4">Hello, this is a Gemini text to speech test.</textarea>
+
+<button id="run">Generate Speech</button>
+
+<div class="status" id="status"></div>
+<audio id="audio" controls></audio>
+
+<script>
+const MODEL = "gemini-2.5-flash-preview-tts";
+const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/";
+
+let apiKeys = [];
+let keyIndex = 0;
+
+function rotateKey() {
+  if (apiKeys.length > 1) {
+    const failed = apiKeys.splice(keyIndex, 1)[0];
+    apiKeys.push(failed); // move to lowest priority
+    keyIndex = 0;
+  }
+}
+
+async function generateTTS() {
+  const status = document.getElementById("status");
+  const audio = document.getElementById("audio");
+
+  if (apiKeys.length === 0) {
+    status.textContent = "No API keys provided.";
+    return;
+  }
+
+  const text = document.getElementById("text").value.trim();
+  if (!text) {
+    status.textContent = "Text is empty.";
+    return;
+  }
+
+  const key = apiKeys[keyIndex];
+  status.textContent = `Using key ${keyIndex + 1}/${apiKeys.length}…`;
+
+  const url = `${ENDPOINT}${MODEL}:generateContent?key=${key}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+  "contents": [
+    {
+      "parts": [
+        { "text": "Hello world from Gemini TTS" }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "responseModalities": ["AUDIO"],
+    "speechConfig": {
+      "voiceConfig": {
+        "prebuiltVoiceConfig": {
+          "voiceName": "Kore"
+        }
+    }
+  }
+}
+
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+
+    // Gemini returns base64 audio in inlineData
+    const audioPart =
+      data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+    if (!audioPart) {
+      throw new Error("No audio data returned");
+    }
+
+    const base64 = audioPart.inlineData.data;
+    const mime = audioPart.inlineData.mimeType;
+
+    audio.src = `data:${mime};base64,${base64}`;
+    audio.play();
+
+    status.textContent = "Success ✅";
+  } catch (err) {
+    console.error(err);
+    status.textContent = `Key failed → rotating (${err.message})`;
+    rotateKey();
+  }
+}
+
+document.getElementById("run").onclick = () => {
+  apiKeys = document
+    .getElementById("keys")
+    .value
+    .split(",")
+    .map(k => k.trim())
+    .filter(Boolean);
+
+  keyIndex = 0;
+  generateTTS();
+};
+</script>
+
+</body>
+</html>
