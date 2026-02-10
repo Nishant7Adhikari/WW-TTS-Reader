@@ -144,7 +144,7 @@ h1 {
   right: 0;
   bottom: 0;
   background-color: #334155;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 24px;
 }
 
@@ -156,7 +156,7 @@ h1 {
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 50%;
 }
 
@@ -219,8 +219,13 @@ kbd {
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
 }
 
 .docs-section {
@@ -510,4 +515,59 @@ kbd {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+/* PAD System Styles */
+#learning-indicator .value {
+  color: var(--accent);
+}
+
+.paused-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+}
+
+.paused .paused-overlay {
+  display: block;
+}
+
+.profiles-setup {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.profile-select {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 4px 8px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+    padding: 0 5px;
+}
+
+.icon-btn:hover {
+    transform: rotate(180deg);
 }

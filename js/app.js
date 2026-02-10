@@ -1,15 +1,18 @@
 import { Tokenizer, TOKEN_TYPES } from "./tokenizer.js";
 import { SpeechController } from "./speechController.js";
 import { KeyboardHandler } from "./keyboard.js";
+import { AdaptiveEngine } from "./adaptiveEngine.js";
 
 class App {
   constructor() {
     this.tokens = [];
     this.currentIndex = -1;
     this.isSessionRunning = false;
+    this.autoReadTimeout = null;
 
     // Components
     this.speech = new SpeechController();
+    this.adaptive = new AdaptiveEngine();
     this.keyboard = new KeyboardHandler({
       next: () => this.navigate(1),
       prev: () => this.navigate(-1),
@@ -22,6 +25,7 @@ class App {
       decreaseRate: () => this.updateRate(-0.1),
       startSession: () => this.startSession(),
       autoRead: () => this.toggleAutoRead(),
+      togglePause: () => this.togglePause(),
       isSessionActive: () => this.isSessionRunning,
     });
 
@@ -43,9 +47,12 @@ class App {
       capsVal: document.querySelector("#caps-indicator .value"),
       punctVal: document.querySelector("#punct-indicator .value"),
       capsToggle: document.getElementById("caps-toggle"),
-      punctToggle: document.getElementById("punct-toggle"),
       visualToggle: document.getElementById("visual-toggle"),
+      profileSelect: document.getElementById("profile-select"),
+      resetBtn: document.getElementById("reset-profile-btn"),
       toast: document.getElementById("toast"),
+      learningVal: document.querySelector("#learning-indicator .value"),
+      appContainer: document.getElementById("app"),
     };
 
     this._initEvents();
@@ -54,6 +61,9 @@ class App {
   _initEvents() {
     this.elements.startBtn.addEventListener("click", () => this.startSession());
     this.elements.backBtn.addEventListener("click", () => this.stopSession());
+    this.elements.resetBtn.addEventListener("click", () =>
+      this.resetCurrentProfile(),
+    );
 
     // Toggle Inputs
     this.elements.capsToggle.addEventListener("change", (e) => {
@@ -65,6 +75,22 @@ class App {
     });
     this.elements.visualToggle.addEventListener("change", (e) => {
       if (this.isVisualMode !== e.target.checked) this.toggleVisualMode(true);
+    });
+
+    this.elements.profileSelect.addEventListener("change", (e) => {
+      if (e.target.value === "new") {
+        const name = prompt("Enter profile name:");
+        if (name) {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          this.elements.profileSelect.appendChild(option);
+          this.elements.profileSelect.value = name;
+          this.adaptive.switchProfile(name);
+        }
+      } else {
+        this.adaptive.switchProfile(e.target.value);
+      }
     });
   }
 
@@ -114,11 +140,25 @@ class App {
   stopSession() {
     this.isSessionRunning = false;
     this.speech.cancel();
+    clearTimeout(this.autoReadTimeout);
     this.elements.sessionScreen.classList.remove("active");
     this.elements.inputScreen.classList.add("active");
   }
 
-  navigate(delta) {
+  navigate(delta, isManual = true) {
+    clearTimeout(this.autoReadTimeout);
+    if (this.adaptive.isPaused && delta > 0) {
+      this.togglePause(); // Resume on Right Arrow
+    }
+
+    if (delta > 0 && isManual) {
+      this.adaptive.onManualNext();
+    } else if (delta < 0 && this.isAutoReading) {
+      // User hit back during auto-read: Too Fast!
+      this.adaptive.onTooFastSignal();
+      this.toggleAutoRead(); // Stop auto-read on correction
+    }
+
     const nextIdx = this.currentIndex + delta;
     if (nextIdx >= 0 && nextIdx < this.tokens.length) {
       this.currentIndex = nextIdx;
@@ -132,15 +172,21 @@ class App {
   speakCurrent(mode = "NORMAL") {
     const token = this.tokens[this.currentIndex];
     if (token) {
+      this.adaptive.onWordSpoken(token);
       this.speech.speak(token, mode, () => {
-        if (this.isAutoReading) {
-          setTimeout(() => {
-            if (this.currentIndex < this.tokens.length - 1) {
-              this.navigate(1);
-            } else {
-              this.toggleAutoRead();
+        if (this.isAutoReading && !this.adaptive.isPaused) {
+          const waitTime = this.adaptive.predictRequiredTime(token);
+          console.log(`PAD: Waiting ${waitTime.toFixed(0)}ms for next word.`);
+
+          this.autoReadTimeout = setTimeout(() => {
+            if (this.isAutoReading && !this.adaptive.isPaused) {
+              if (this.currentIndex < this.tokens.length - 1) {
+                this.navigate(1, false); // FALSE means auto-triggered, don't train on this
+              } else {
+                this.toggleAutoRead();
+              }
             }
-          }, 200); // Tiny pause between words for natural flow
+          }, waitTime);
         }
       });
     }
@@ -149,12 +195,25 @@ class App {
   toggleAutoRead() {
     this.isAutoReading = !this.isAutoReading;
     if (this.isAutoReading) {
-      this.showToast("Auto-Read: ON");
+      this.showToast("AI Adaptive Auto-Read: ON");
       this.speakCurrent();
     } else {
       this.showToast("Auto-Read: OFF");
       this.speech.cancel();
     }
+  }
+
+  togglePause() {
+    const isPaused = this.adaptive.togglePause();
+    this.elements.appContainer.classList.toggle("paused", isPaused);
+    if (isPaused) {
+      this.speech.cancel();
+      this.showToast("Session Paused (Space)");
+    } else {
+      this.showToast("Session Resumed");
+      this.speakCurrent();
+    }
+    this.updateUI();
   }
 
   toggleCaps(fromToggle = false) {
@@ -199,6 +258,18 @@ class App {
     this.showToast(`Visual Mode: ${this.isVisualMode ? "ON" : "OFF"}`);
   }
 
+  resetCurrentProfile() {
+    if (
+      confirm(
+        `Reset all learning data for profile "${this.adaptive.currentProfile}"?`,
+      )
+    ) {
+      this.adaptive.resetProfile();
+      this.showToast("Profile Reset Successful");
+      this.updateUI();
+    }
+  }
+
   updateRate(delta) {
     const newRate = this.speech.setRate(this.speech.rate + delta);
     this.elements.speedVal.textContent = `${newRate.toFixed(2)}x`;
@@ -214,6 +285,16 @@ class App {
     this.elements.prevToken.textContent = prev ? prev.raw : "";
     this.elements.nextToken.textContent = next ? next.raw : "";
 
+    // Training Mastered Notification
+    if (!this.isAutoReading && this.adaptive.isMastered()) {
+      if (!this.hasNotifiedMastery) {
+        this.showToast(
+          "AI has learned your rhythm! Ctrl+Shift+Right to enable Auto-speech.",
+        );
+        this.hasNotifiedMastery = true;
+      }
+    }
+
     // Highlight if phonetic
     this.elements.currentToken.classList.toggle(
       "is-phonetic",
@@ -222,6 +303,16 @@ class App {
 
     // Update progress
     this.elements.progress.textContent = `${this.currentIndex + 1} / ${this.tokens.length} tokens`;
+
+    // Update Adaptive Status
+    this.elements.learningVal.textContent = this.adaptive.getTrainingStatus();
+    this.elements.learningVal.parentElement
+      .querySelector(".dot")
+      .classList.toggle("highlight", this.isAutoReading);
+
+    if (this.adaptive.isPaused) {
+      this.elements.learningVal.textContent = "PAUSED (Space)";
+    }
 
     if (this.isVisualMode) {
       this.renderContext(); // Refresh line window

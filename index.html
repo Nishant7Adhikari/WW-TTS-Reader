@@ -1,172 +1,184 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WW TTS Reader | Active Study Note-Taking Tool</title>
-    <meta
-      name="description"
-      content="Word-by-word text-to-speech reader designed for students to take notes with minimal eye strain. Controlled by keyboard, feature-rich speech logic."
-    />
-    <link rel="stylesheet" href="css/styles.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="app" class="app-container">
-      <!-- Input Screen -->
-      <section id="input-screen" class="screen active">
-        <header>
-          <h1>WW TTS Reader</h1>
-          <p class="subtitle">
-            Word by Word dictation for productive note-taking.
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WW TTS Reader | Active Study Note-Taking Tool</title>
+  <!-- Word by Word Text To Speech Reader -->
+  <meta name="description"
+    content="Word-by-word text-to-speech reader designed for students to take notes with minimal eye strain. Controlled by keyboard, feature-rich speech logic." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+  <div id="app" class="app-container">
+    <div class="paused-overlay">PAUSED (Press Space or Right Arrow to Resume)</div>
+    <!-- Input Screen -->
+    <section id="input-screen" class="screen active">
+      <header>
+        <h1>WW TTS Reader</h1>
+        <p class="subtitle">
+          Word by Word dictation for productive note-taking.
+        </p>
+      </header>
+
+      <div class="input-card">
+        <textarea id="text-input" placeholder="Paste your study material here..."></textarea>
+
+        <div class="quick-settings">
+          <div class="setting">
+            <label class="switch">
+              <input type="checkbox" id="caps-toggle" />
+              <span class="slider"></span>
+            </label>
+            <span>Caps Narration <kbd>Ctrl</kbd>+<kbd>Enter</kbd></span>
+          </div>
+          <div class="setting">
+            <label class="switch">
+              <input type="checkbox" id="punct-toggle" />
+              <span class="slider"></span>
+            </label>
+            <span>Punct (Ctrl+P)</span>
+          </div>
+          <div class="setting">
+            <label class="switch">
+              <input type="checkbox" id="visual-toggle" />
+              <span class="slider"></span>
+            </label>
+            <span>Visual Mode (F)</span>
+          </div>
+        </div>
+
+        <div class="profiles-setup">
+          <span>Writing Profile:</span>
+          <select id="profile-select" class="profile-select">
+            <option value="default">Default (Balanced)</option>
+            <option value="college">College (Slow/Slow-writing)</option>
+            <option value="casual">Casual (Fast/Messy)</option>
+            <option value="new">+ Create New Profile</option>
+          </select>
+          <button id="reset-profile-btn" class="icon-btn" title="Reset Current Profile">🔄</button>
+          <span class="hint">Learning is saved per profile.</span>
+        </div>
+
+        <div class="input-actions">
+          <button id="start-btn" class="primary-btn">
+            Start Reading Session
+          </button>
+          <p class="hint">
+            Tip: Press <kbd>Shift</kbd> + <kbd>Enter</kbd> to start.
           </p>
-        </header>
+        </div>
+      </div>
 
-        <div class="input-card">
-          <textarea
-            id="text-input"
-            placeholder="Paste your study material here..."
-          ></textarea>
+      <div class="scroll-prompt">
+        <span>Scroll for Documentation & Features</span>
+        <span class="arrow">↓</span>
+      </div>
+    </section>
 
-          <div class="quick-settings">
-            <div class="setting">
-              <label class="switch">
-                <input type="checkbox" id="caps-toggle" />
-                <span class="slider"></span>
-              </label>
-              <span>Caps Narration <kbd>Ctrl</kbd>+<kbd>Enter</kbd></span>
+    <!-- Session Screen -->
+    <section id="session-screen" class="screen">
+      <div class="session-header">
+        <button id="back-btn" class="text-btn">← Edit Text</button>
+        <div class="session-brand">WW TTS Reader</div>
+        <div class="controls-hint">
+          <kbd>←</kbd> <kbd>→</kbd> Navigate | <kbd>Enter</kbd> Repeat |
+          <kbd>Ctrl</kbd>+<kbd>→</kbd> Spell
+        </div>
+      </div>
+
+      <div class="token-display-area">
+        <div id="prev-token" class="token secondary"></div>
+        <div id="current-token" class="token active"></div>
+        <div id="next-token" class="token secondary"></div>
+      </div>
+
+      <div class="context-view" id="context-view">
+        <!-- Tokens will be rendered here for context -->
+      </div>
+    </section>
+
+    <!-- Documentation Section (Below Fold) -->
+    <section class="docs-section">
+      <div class="features-grid">
+        <div class="feature">
+          <span class="icon">⌨️</span>
+          <h3>Keyboard First</h3>
+          <p>Navigate word-by-word using arrow keys. No mouse needed.</p>
+        </div>
+        <div class="feature">
+          <span class="icon">🔊</span>
+          <h3>Punctuation</h3>
+          <p>
+            Speaks commas, dots, and brackets clearly for accurate writing.
+          </p>
+        </div>
+        <div class="feature shortcuts-card">
+          <span class="icon">📋</span>
+          <h3>Shortcuts Guide</h3>
+          <div class="shortcuts-accordion">
+            <div class="shortcut-item">
+              <span>Next/Prev</span><kbd>→</kbd>/<kbd>←</kbd>
             </div>
-            <div class="setting">
-              <label class="switch">
-                <input type="checkbox" id="punct-toggle" />
-                <span class="slider"></span>
-              </label>
-              <span>Punct (Ctrl+P)</span>
+            <div class="shortcut-item">
+              <span>Repeat</span><kbd>Enter</kbd>
             </div>
-            <div class="setting">
-              <label class="switch">
-                <input type="checkbox" id="visual-toggle" />
-                <span class="slider"></span>
-              </label>
-              <span>Visual Mode (F)</span>
+            <div class="shortcut-item">
+              <span>Auto-Read</span><kbd>Ctrl+Sh+→</kbd>
             </div>
-          </div>
-
-          <div class="input-actions">
-            <button id="start-btn" class="primary-btn">
-              Start Reading Session
-            </button>
-            <p class="hint">
-              Tip: Press <kbd>Shift</kbd> + <kbd>Enter</kbd> to start.
-            </p>
-          </div>
-        </div>
-
-        <div class="scroll-prompt">
-          <span>Scroll for Documentation & Features</span>
-          <span class="arrow">↓</span>
-        </div>
-      </section>
-
-      <!-- Session Screen -->
-      <section id="session-screen" class="screen">
-        <div class="session-header">
-          <button id="back-btn" class="text-btn">← Edit Text</button>
-          <div class="session-brand">WW TTS Reader</div>
-          <div class="controls-hint">
-            <kbd>←</kbd> <kbd>→</kbd> Navigate | <kbd>Enter</kbd> Repeat |
-            <kbd>Ctrl</kbd>+<kbd>→</kbd> Spell
-          </div>
-        </div>
-
-        <div class="token-display-area">
-          <div id="prev-token" class="token secondary"></div>
-          <div id="current-token" class="token active"></div>
-          <div id="next-token" class="token secondary"></div>
-        </div>
-
-        <div class="context-view" id="context-view">
-          <!-- Tokens will be rendered here for context -->
-        </div>
-      </section>
-
-      <!-- Documentation Section (Below Fold) -->
-      <section class="docs-section">
-        <div class="features-grid">
-          <div class="feature">
-            <span class="icon">⌨️</span>
-            <h3>Keyboard First</h3>
-            <p>Navigate word-by-word using arrow keys. No mouse needed.</p>
-          </div>
-          <div class="feature">
-            <span class="icon">🔊</span>
-            <h3>Punctuation</h3>
-            <p>
-              Speaks commas, dots, and brackets clearly for accurate writing.
-            </p>
-          </div>
-          <div class="feature shortcuts-card">
-            <span class="icon">📋</span>
-            <h3>Shortcuts Guide</h3>
-            <div class="shortcuts-accordion">
-              <div class="shortcut-item">
-                <span>Next/Prev</span><kbd>→</kbd>/<kbd>←</kbd>
-              </div>
-              <div class="shortcut-item">
-                <span>Repeat</span><kbd>Enter</kbd>
-              </div>
-              <div class="shortcut-item">
-                <span>Auto-Read</span><kbd>Ctrl+Sh+→</kbd>
-              </div>
-              <div class="shortcut-item">
-                <span>Visual Mode</span><kbd>F</kbd>
-              </div>
-              <div class="shortcut-item">
-                <span>Settings</span><kbd>Ct+Ent</kbd>/<kbd>Ct+P</kbd>
-              </div>
+            <div class="shortcut-item">
+              <span>Visual Mode</span><kbd>F</kbd>
+            </div>
+            <div class="shortcut-item">
+              <span>Settings</span><kbd>Ct+Ent</kbd>/<kbd>Ct+P</kbd>
             </div>
           </div>
         </div>
-        <div class="docs-link-container">
-          <a href="docs/api_design.md" class="docs-link" target="_blank"
-            >View Technical Documentation</a
-          >
-        </div>
-      </section>
+      </div>
+      <div class="docs-link-container">
+        <a href="docs/api_design.md" class="docs-link" target="_blank">View Technical Documentation</a>
+      </div>
+    </section>
 
-      <!-- Status Bar -->
-      <footer class="status-bar">
-        <div class="status-left">
-          <span id="progress-indicator">0 / 0 tokens</span>
+    <!-- Status Bar -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <span id="progress-indicator">0 / 0 tokens</span>
+      </div>
+      <div class="status-center">
+        <div class="indicator" id="caps-indicator">
+          <span class="dot"></span> Caps: <span class="value">OFF</span>
         </div>
-        <div class="status-center">
-          <div class="indicator" id="caps-indicator">
-            <span class="dot"></span> Caps: <span class="value">OFF</span>
-          </div>
-          <div class="indicator" id="punct-indicator">
-            <span class="dot"></span> Punctuation:
-            <span class="value">OFF</span>
-          </div>
-          <div class="indicator" id="speed-indicator">
-            <span class="dot highlight"></span> Speed:
-            <span class="value">1.15x</span>
-          </div>
+        <div class="indicator" id="punct-indicator">
+          <span class="dot"></span> Punctuation:
+          <span class="value">OFF</span>
         </div>
-        <div class="status-right">
-          <span id="keyboard-status">Ready</span>
+        <div class="indicator" id="speed-indicator">
+          <span class="dot highlight"></span> Speed:
+          <span class="value">1.15x</span>
         </div>
-      </footer>
-    </div>
+      </div>
+      <div class="status-right">
+        <div class="indicator" id="learning-indicator">
+          <span class="dot"></span> <span class="value">Learning: 0%</span>
+        </div>
+        <span id="keyboard-status">Ready</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Modals / Toast -->
-    <div id="toast" class="toast hidden"></div>
+  <!-- Modals / Toast -->
+  <div id="toast" class="toast hidden"></div>
 
-    <!-- Scripts -->
-    <script type="module" src="js/app.js"></script>
-  </body>
+  <!-- Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+
 </html>

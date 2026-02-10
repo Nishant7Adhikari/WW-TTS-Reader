@@ -1,4 +1,4 @@
-  /**
+/**
  * Keyboard Handler for WW TTS Reader
  * Maps physical keys to application actions.
  */
@@ -75,6 +75,10 @@ export class KeyboardHandler {
         } else {
           this.actions.repeat();
         }
+      } else if (e.key === " ") {
+        // Space to toggle pause
+        e.preventDefault();
+        this.actions.togglePause();
       }
 
       // Speed Control
